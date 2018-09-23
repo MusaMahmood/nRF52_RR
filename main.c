@@ -94,6 +94,7 @@ static bool m_connected = false;
 #define SPI_SCLK_SAMPLING 2
 #endif
 
+
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1
 #include "nrf_drv_saadc.h"
 #define SAMPLES_IN_BUFFER 4

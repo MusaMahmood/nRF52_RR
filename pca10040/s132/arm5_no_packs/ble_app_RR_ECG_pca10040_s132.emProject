@@ -48,6 +48,10 @@
       <file file_name="ble_bas.c" />
       <file file_name="spi_master_fast.h" />
       <file file_name="spi_master_fast.c" />
+      <file file_name="get_hr_rr.c" />
+      <file file_name="rt_nonfinite.c" />
+      <file file_name="rtGetInf.c" />
+      <file file_name="rtGetNaN.c" />
     </folder>
     <folder Name="Board Definition">
       <file file_name="../../../../../../components/boards/boards.c" />
@@ -123,6 +127,7 @@
       <file file_name="flash_placement.xml" />
     </folder>
     <folder Name="nRF_BLE_Services" />
+    <file file_name="../armgcc/Makefile" />
   </project>
   <configuration Name="Internal" hidden="Yes" />
   <configuration Name="nrf52832_xxaa" inherited_configurations="Internal" />
