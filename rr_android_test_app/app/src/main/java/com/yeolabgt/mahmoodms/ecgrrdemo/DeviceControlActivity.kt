@@ -46,14 +46,9 @@ import java.util.*
 class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     // Graphing Variables:
     private var mGraphInitializedBoolean = false
+    private var mTimeDomainPlotAdapterCh1: XYPlotAdapter? = null
     private var mGraphAdapterCh1: GraphAdapter? = null
     private var mGraphAdapterCh2: GraphAdapter? = null
-    private var mGraphAdapterMotionAX: GraphAdapter? = null
-    private var mGraphAdapterMotionAY: GraphAdapter? = null
-    private var mGraphAdapterMotionAZ: GraphAdapter? = null
-    private var mTimeDomainPlotAdapterCh1: XYPlotAdapter? = null
-    //    private var mTimeDomainPlotAdapterCh2: XYPlotAdapter? = null
-    private var mMotionDataPlotAdapter: XYPlotAdapter? = null
     //Device Information
     private var mBleInitializedBoolean = false
     private lateinit var mBluetoothGattArray: Array<BluetoothGatt?>
@@ -71,9 +66,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     private var menu: Menu? = null
     //Data throughput counter
     private var mLastTime: Long = 0
-    private var mLastTime2: Long = 0
     private var points = 0
-    private var points2 = 0
     private val mTimerHandler = Handler()
     private var mTimerEnabled = false
     //Data Variables:
@@ -92,47 +85,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
 
     private val mTimeStamp: String
         get() = SimpleDateFormat("yyyy.MM.dd_HH.mm.ss", Locale.US).format(Date())
-
-    private val mClassifyThread = Runnable {
-        if (mTFRunModel) {
-            val outputProbabilities = FloatArray(2000 * 5)
-            val ecgRawDoubles = mCh1!!.classificationBuffer
-            // Filter, level and return as floats:
-            val inputArray = jecgFiltRescale(ecgRawDoubles)  //Float Array
-            Log.e(TAG, "OrigArray: " + Arrays.toString(inputArray))
-            mTensorFlowInferenceInterface!!.feed(INPUT_DATA_FEED_KEY, inputArray, 1L, mTensorflowInputXDim, mTensorflowInputYDim)
-            mTensorFlowInferenceInterface!!.run(mOutputScoresNames)
-            mTensorFlowInferenceInterface!!.fetch(OUTPUT_DATA_FEED_KEY, outputProbabilities)
-            // Save outputProbabilities
-            Log.e(TAG, "OutputArray: ${outputProbabilities.size}")
-            val outputProbReshaped = jrearrange5c(outputProbabilities)
-            val classDist = jgetClassDist(outputProbReshaped)
-            val outputClass = classDist[0]
-            val classString: String = "Normal: %1.2f \n".format(classDist[1]/2000.0) +
-                    "SVEB: %1.2f \n".format(classDist[2]/2000.0) +
-                    "VEB: %1.2f \n".format(classDist[3]/2000.0) +
-                    "Fused: %1.2f \n".format(classDist[4]/2000.0) +
-                    "Paced/other: %1.2f \n".format(classDist[5]/2000.0) +
-                    "Output class: $outputClass"
-            // Distribute across 5 FAs:
-            val outputProbClass0 = FloatArray(2000)
-            val outputProbClass1 = FloatArray(2000)
-            val outputProbClass2 = FloatArray(2000)
-            val outputProbClass3 = FloatArray(2000)
-            val outputProbClass4 = FloatArray(2000)
-            System.arraycopy(outputProbReshaped, 0, outputProbClass0, 0, 2000)
-            System.arraycopy(outputProbReshaped, 2000, outputProbClass1, 0, 2000)
-            System.arraycopy(outputProbReshaped, 4000, outputProbClass2, 0, 2000)
-            System.arraycopy(outputProbReshaped, 6000, outputProbClass3, 0, 2000)
-            System.arraycopy(outputProbReshaped, 8000, outputProbClass4, 0, 2000)
-            runOnUiThread {
-                classOutputText.text = classString
-            }
-            // Save data:
-            mTensorflowOutputsSaveFile?.writeToDiskFloat(inputArray, outputProbClass0,
-                    outputProbClass1, outputProbClass2, outputProbClass3, outputProbClass4)
-        }
-    }
 
     private fun enableTensorflowModel() {
         val classificationModelBinary = "opt_incart_annotate.pb"
@@ -352,32 +304,15 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         // Initialize our XYPlot reference:
         mGraphAdapterCh1 = GraphAdapter(1250, "ECG Data Ch 1", false, Color.BLUE) //Color.parseColor("#19B52C") also, RED, BLUE, etc.
         mGraphAdapterCh2 = GraphAdapter(1250, "ECG Data Ch 2", false, Color.RED) //Color.parseColor("#19B52C") also, RED, BLUE, etc.
-        mGraphAdapterMotionAX = GraphAdapter(375, "Acc X", false, Color.RED)
-        mGraphAdapterMotionAY = GraphAdapter(375, "Acc Y", false, Color.GREEN)
-        mGraphAdapterMotionAZ = GraphAdapter(375, "Acc Z", false, Color.BLUE)
         //PLOT CH1 By default
         mGraphAdapterCh1!!.setPointWidth(2.toFloat())
         mGraphAdapterCh2!!.setPointWidth(2.toFloat())
-        mGraphAdapterMotionAX?.setPointWidth(2.toFloat())
-        mGraphAdapterMotionAY?.setPointWidth(2.toFloat())
-        mGraphAdapterMotionAZ?.setPointWidth(2.toFloat())
         mTimeDomainPlotAdapterCh1 = XYPlotAdapter(findViewById(R.id.ecgTimeDomainXYPlot), false, if (mSampleRate < 1000) 4 * mSampleRate else 2000)
         mTimeDomainPlotAdapterCh1?.xyPlot?.addSeries(mGraphAdapterCh1!!.series, mGraphAdapterCh1!!.lineAndPointFormatter)
-        mMotionDataPlotAdapter = XYPlotAdapter(findViewById(R.id.motionDataPlot), "Time (s)", "Acc (g)", 375.0)
-        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAX?.series, mGraphAdapterMotionAX?.lineAndPointFormatter)
-        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAY?.series, mGraphAdapterMotionAY?.lineAndPointFormatter)
-        mMotionDataPlotAdapter?.xyPlot!!.addSeries(mGraphAdapterMotionAZ?.series, mGraphAdapterMotionAZ?.lineAndPointFormatter)
-        val xyPlotList = listOf(mTimeDomainPlotAdapterCh1?.xyPlot, mMotionDataPlotAdapter?.xyPlot)
+        val xyPlotList = listOf(mTimeDomainPlotAdapterCh1?.xyPlot)
         mRedrawer = Redrawer(xyPlotList, 30f, false)
         mRedrawer!!.start()
         mGraphInitializedBoolean = true
-
-        mGraphAdapterMotionAX?.setxAxisIncrement(0.032)
-        mGraphAdapterMotionAX?.setSeriesHistoryDataPoints(375)
-        mGraphAdapterMotionAY?.setxAxisIncrement(0.032)
-        mGraphAdapterMotionAY?.setSeriesHistoryDataPoints(375)
-        mGraphAdapterMotionAZ?.setxAxisIncrement(0.032)
-        mGraphAdapterMotionAZ?.setSeriesHistoryDataPoints(375)
 
         mGraphAdapterCh1!!.setxAxisIncrementFromSampleRate(mSampleRate)
         mGraphAdapterCh2!!.setxAxisIncrementFromSampleRate(mSampleRate)
@@ -554,7 +489,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
 
                 if (AppConstant.SERVICE_MPU == service.uuid) {
                     mActBle!!.setCharacteristicNotifications(gatt, service.getCharacteristic(AppConstant.CHAR_MPU_COMBINED), true)
-                    //TODO: INITIALIZE MPU FILE HERE:
                     mMPU = DataChannel(false, true, 0)
                     createNewFileMPU()
                 }
@@ -594,32 +528,13 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             if (!mCh1!!.chEnabled) mCh1!!.chEnabled = true
             val mNewEEGdataBytes = characteristic.value
             getDataRateBytes(mNewEEGdataBytes.size)
-            //TODO: IMPLEMENT FLOAT INTERPRETATION
             mCh1!!.handleNewData(mNewEEGdataBytes)
             addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
 //            mPrimarySaveDataFile!!.writeToDisk(mCh1!!.characteristicDataPacketBytes)
-            // For every 2000 dp recieved, run classification model.
-            if (mCh1!!.totalDataPointsReceived % 1040 == 0 && mCh1!!.totalDataPointsReceived != 0) {
-                Log.e(TAG, "Total datapoints: ${mCh1!!.totalDataPointsReceived}")
-                val classifyTaskThread = Thread(mClassifyThread)
-                classifyTaskThread.start()
-            }
         }
 
         if (AppConstant.CHAR_EEG_CH2_SIGNAL == characteristic.uuid) {
             if (mCh2!!.chEnabled) mCh2!!.chEnabled = true
-        }
-
-        if (AppConstant.CHAR_MPU_COMBINED == characteristic.uuid) {
-            val dataMPU = characteristic.value
-            getDataRateBytes2(dataMPU.size) //+=240
-            mMPU!!.handleNewData(dataMPU)
-            addToGraphBufferMPU(mMPU!!)
-            mSaveFileMPU!!.exportDataWithTimestampMPU(mMPU!!.characteristicDataPacketBytes)
-            if (mSaveFileMPU!!.mLinesWrittenCurrentFile > 1048576) {
-                mSaveFileMPU!!.terminateDataFileWriter()
-                createNewFileMPU()
-            }
         }
     }
 
@@ -650,18 +565,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         dataChannel.resetBuffer()
     }
 
-    private fun addToGraphBufferMPU(dataChannel: DataChannel) {
-        if (dataChannel.dataBuffer != null) {
-            for (i in 0 until dataChannel.dataBuffer!!.size / 12) {
-                mGraphAdapterMotionAX?.addDataPointTimeDomain(DataChannel.bytesToDoubleMPUAccel(dataChannel.dataBuffer!![12 * i], dataChannel.dataBuffer!![12 * i + 1]), mTimestampIdxMPU)
-                mGraphAdapterMotionAY?.addDataPointTimeDomain(DataChannel.bytesToDoubleMPUAccel(dataChannel.dataBuffer!![12 * i + 2], dataChannel.dataBuffer!![12 * i + 3]), mTimestampIdxMPU)
-                mGraphAdapterMotionAZ?.addDataPointTimeDomain(DataChannel.bytesToDoubleMPUAccel(dataChannel.dataBuffer!![12 * i + 4], dataChannel.dataBuffer!![12 * i + 5]), mTimestampIdxMPU)
-                mTimestampIdxMPU += 1
-            }
-        }
-        dataChannel.resetBuffer()
-    }
-
     private fun getDataRateBytes(bytes: Int) {
         val mCurrentTime = System.currentTimeMillis()
         points += bytes
@@ -674,17 +577,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                 val s = dataRate.toString() + " Bytes/s"
                 mDataRate!!.text = s
             }
-        }
-    }
-
-    private fun getDataRateBytes2(bytes: Int) {
-        val mCurrentTime = System.currentTimeMillis()
-        points2 += bytes
-        if (mCurrentTime > mLastTime2 + 3000) {
-            val datarate2 = (points2 / 3).toDouble()
-            points2 = 0
-            mLastTime2 = mCurrentTime
-            Log.e(" DataRate 2(MPU):", datarate2.toString() + " Bytes/s")
         }
     }
 

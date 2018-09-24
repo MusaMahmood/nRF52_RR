@@ -75,23 +75,8 @@
                 android:layout_weight="0.4"
                 ap:renderMode="use_background_thread" />
 
-            <com.androidplot.xy.XYPlot
-                android:id="@+id/motionDataPlot"
-                style="@style/APFullScreenGraph.Light.Minimalist"
-                android:layout_width="match_parent"
-                android:layout_height="fill_parent"
-                android:layout_weight="0.4"
-                ap:renderMode="use_background_thread" />
-
 
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/classOutputText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Please Wait..." />
 
     </LinearLayout>
 
