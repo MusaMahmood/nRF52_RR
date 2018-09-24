@@ -759,24 +759,20 @@ void saadc_init(void) {
 }
 #endif
 
-
-uint16_t get_max(const uint16_t X[1000])
-{
-  uint16_t Y;
-  uint16_t ix;
-
-  /* 'get_max:5' Y = int16(max(X)); */
-  Y = X[0];
-  for (ix = 0; ix < 999; ix++) {
-    if (X[ix + 1] > Y) {
-      Y = X[ix + 1];
-    }
-  }
-
-  /* *single(max(X_r)); */
-  return Y;
+void float2Bytes(uint8_t* bytes_temp, float float_variable){ 
+  memcpy(bytes_temp, (uint8_t*) (&float_variable), 4);
 }
 
+void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000])
+{
+  float f_temp;
+  int i;
+  for (i = 0; i < 1000; i++) {
+    f_temp = (float)X[i] / 32767.0F * 1.21F;
+    //NRF_LOG_ERROR( "Float[0] " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(Y[i]));
+    float2Bytes(&Y[4*i], f_temp);
+  }
+}
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   UNUSED_PARAMETER(pin);
@@ -785,14 +781,14 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
 #if ADS1291_2_REGDEFAULT_CONFIG1 == 0x06
   get_eeg_voltage_array_2ch(&m_eeg);
 #else
-  get_eeg_voltage_array_2ch(&m_eeg);
-  //get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
-  /*if (m_eeg.ecg_data_buffer_count == 1000) {
+  //get_eeg_voltage_array_2ch(&m_eeg);
+  get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
+  if (m_eeg.ecg_data_buffer_count == 1000) {
     m_eeg.ecg_data_buffer_count = 0;
-    // TODO: Run Data Through Peak Detection Algorithm:
-    uint16_t test = get_max(m_eeg.ecg_data_buffer);
-    NRF_LOG_INFO("MaxInt: %d \r\n", test);
-  }*/
+    convert_to_float_as_uint8(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_float);
+    // TODO: Run Data Through Peak Detection Algorithm
+    ble_ecg_float_update(&m_eeg);
+  }
 #endif
   }
 #if defined(APP_TIMER_SAMPLING) && APP_TIMER_SAMPLING == 1

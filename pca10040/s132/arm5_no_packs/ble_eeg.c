@@ -28,9 +28,6 @@
 #include "nrf_log.h"
 #include <string.h>
 
-#define MAX_LEN_BLE_PACKET_BYTES 246 //20*3bytes																						 /**< Maximum size in bytes of a transmitted Body Voltage Measurement. */
-                                     //20*3bytes																						 /**< Maximum size in bytes of a transmitted Body Voltage Measurement. */
-
 void ble_eeg_on_ble_evt(ble_eeg_t *p_eeg, ble_evt_t *p_ble_evt) {
   switch (p_ble_evt->header.evt_id) {
   case BLE_GAP_EVT_CONNECTED:
@@ -208,6 +205,27 @@ void ble_eeg_update_2ch(ble_eeg_t *p_eeg) {
         .p_data = p_eeg->eeg_ch2_buffer,
     };
     err_code = sd_ble_gatts_hvx(p_eeg->conn_handle, &hvx_params);
+  }
+  if (err_code == NRF_ERROR_RESOURCES) {
+    NRF_LOG_INFO("sd_ble_gatts_hvx() ERR/RES: 0x%x\r\n", err_code);
+  }
+}
+
+void ble_ecg_float_update(ble_eeg_t *p_eeg) {
+  uint32_t err_code;
+  if (p_eeg->conn_handle != BLE_CONN_HANDLE_INVALID) {
+    uint16_t hvx_len = 200;
+    for (uint16_t i=0; i < 20; i++) {
+      ble_gatts_hvx_params_t const hvx_params = {
+          .handle = p_eeg->eeg_ch1_handles.value_handle,
+          .type = BLE_GATT_HVX_NOTIFICATION,
+          .offset = 0,
+          .p_len = &hvx_len,
+          .p_data = &p_eeg->ecg_data_buffer_float[200*i],
+      };
+      err_code = sd_ble_gatts_hvx(p_eeg->conn_handle, &hvx_params);
+      NRF_LOG_INFO("Sending Data As Floats Packet #%d\r\n", i);
+    }
   }
   if (err_code == NRF_ERROR_RESOURCES) {
     NRF_LOG_INFO("sd_ble_gatts_hvx() ERR/RES: 0x%x\r\n", err_code);

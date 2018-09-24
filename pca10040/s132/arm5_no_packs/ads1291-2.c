@@ -378,7 +378,7 @@ void get_eeg_voltage_array_2ch_low_resolution(ble_eeg_t *p_eeg) {
   uint16_t combined_ch1 = (rx_data[3] << 8) | (rx_data[4] & 0xFF);
   p_eeg->ecg_data_buffer[p_eeg->ecg_data_buffer_count] = combined_ch1;
   p_eeg->ecg_data_buffer_count++;
-//  NRF_LOG_INFO("TmpChk: %d \n", combined_ch1);
+  //NRF_LOG_INFO("TmpChk: %d \n", combined_ch1);
   //OLD CODE: 
 
   //p_eeg->eeg_ch1_buffer[p_eeg->eeg_ch1_count] = rx_data[3];

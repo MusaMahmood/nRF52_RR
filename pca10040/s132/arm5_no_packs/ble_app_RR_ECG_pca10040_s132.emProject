@@ -25,6 +25,7 @@
       <file file_name="../../../../../../internal/thumb_crt0.s" />
     </folder>
     <configuration
+      CMSIS_DSP="Cortex-M4 Little Endian With FPU"
       Name="nrf52832_xxaa"
       arm_linker_no_warn_on_mismatch="No"
       c_preprocessor_definitions="BLE_STACK_SUPPORT_REQD;BOARD_CUSTOM;BOARD_2CH_ECG_RAT;CONFIG_NFCT_PINS_AS_GPIOS;NRF52;ADS1292;NRF52832_XXAA;NRF_SD_BLE_API_VERSION=4;S132;SOFTDEVICE_PRESENT;SWI_DISABLE0;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;C_MATLAB;ARM_MATH_CM4"
