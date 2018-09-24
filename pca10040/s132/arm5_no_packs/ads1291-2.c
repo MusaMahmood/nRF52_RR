@@ -374,10 +374,16 @@ void get_eeg_voltage_array_2ch_low_resolution(ble_eeg_t *p_eeg) {
     __WFE();
 //    __WFE();
 #endif
-  p_eeg->eeg_ch1_buffer[p_eeg->eeg_ch1_count] = rx_data[3];
-  p_eeg->eeg_ch1_buffer[p_eeg->eeg_ch1_count + 1] = rx_data[4];
-  p_eeg->eeg_ch2_buffer[p_eeg->eeg_ch1_count] = rx_data[6];
-  p_eeg->eeg_ch2_buffer[p_eeg->eeg_ch1_count + 1] = rx_data[7];
-  //  if (rx_data[0]!=0xC0)
-  NRF_LOG_HEXDUMP_INFO(rx_data, 12 * sizeof(uint8_t));
+  //NOTE: MSB = [3], LSB = [5], but we're dropping last 8 bits
+  uint16_t combined_ch1 = (rx_data[3] << 8) | (rx_data[4] & 0xFF);
+  p_eeg->ecg_data_buffer[p_eeg->ecg_data_buffer_count] = combined_ch1;
+  p_eeg->ecg_data_buffer_count++;
+//  NRF_LOG_INFO("TmpChk: %d \n", combined_ch1);
+  //OLD CODE: 
+
+  //p_eeg->eeg_ch1_buffer[p_eeg->eeg_ch1_count] = rx_data[3];
+  //p_eeg->eeg_ch1_buffer[p_eeg->eeg_ch1_count + 1] = rx_data[4];
+  //p_eeg->eeg_ch2_buffer[p_eeg->eeg_ch1_count] = rx_data[6];
+  //p_eeg->eeg_ch2_buffer[p_eeg->eeg_ch1_count + 1] = rx_data[7];
+  //NRF_LOG_HEXDUMP_INFO(rx_data, 12 * sizeof(uint8_t));
 }

@@ -62,8 +62,11 @@ typedef struct
   ble_gatts_char_handles_t eeg_ch1_handles; /**< Handles related to the our body V measure characteristic. */
   ble_gatts_char_handles_t eeg_ch2_handles; /**< Handles related to the our body V measure characteristic. */
   uint8_t eeg_ch1_buffer[EEG_PACKET_LENGTH]; //246 or 4* = 
-  uint8_t eeg_ch2_buffer[EEG_PACKET_LENGTH]; //246 or 4* = 
+  uint8_t eeg_ch2_buffer[EEG_PACKET_LENGTH]; //246 or 4* =
   uint16_t eeg_ch1_count;
+  // Background Monitoring Data:
+  uint16_t ecg_data_buffer[1000];
+  uint16_t ecg_data_buffer_count;
 } ble_eeg_t;
 
 void ble_eeg_service_init(ble_eeg_t *p_eeg);

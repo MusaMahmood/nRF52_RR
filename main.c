@@ -67,7 +67,7 @@
 #include "ble_hci.h"
 #include "ble_srv_common.h"
 #include "boards.h"
-#include "fds.h"
+//#include "fds.h"
 #include "fstorage.h"
 #include "nordic_common.h"
 #include "nrf.h"
@@ -114,6 +114,11 @@ static ble_bas_t m_bas;                                   /**< Structure used to
 #define TICKS_SAMPLING_INTERVAL APP_TIMER_TICKS(1000)
 APP_TIMER_DEF(m_sampling_timer_id);
 static uint16_t m_samples;
+#endif
+
+#if defined(C_MATLAB)
+// TODO: Stuff for External C code impl. 
+
 #endif
 
 #define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
@@ -247,7 +252,7 @@ static void gap_params_init(void) {
   ble_gap_conn_sec_mode_t sec_mode;
 
   BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
-  if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x01) {
+  if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x01 || ADS1291_2_REGDEFAULT_CONFIG1 == 0x00) {
     err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME,
         strlen(DEVICE_NAME));
   } else if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x02) {
@@ -423,7 +428,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt) {
 //#if defined(BOARD_EXG_V3)
 #if LEDS_ENABLE == 1
     nrf_gpio_pin_clear(LED_2); // Green
-//    nrf_gpio_pin_set(LED_1);   //Blue
+    nrf_gpio_pin_set(LED_1);   //Blue
 #endif
     break;
 
@@ -449,7 +454,7 @@ static void on_ble_evt(ble_evt_t *p_ble_evt) {
     ads1291_2_standby();
 #if LEDS_ENABLE == 1
     nrf_gpio_pin_clear(LED_2); // Blue
-//    nrf_gpio_pin_set(LED_1);   // Green
+    nrf_gpio_pin_set(LED_1);   // Green
 #endif
     advertising_start();
     break; // BLE_GAP_EVT_DISCONNECTED
@@ -460,7 +465,7 @@ static void on_ble_evt(ble_evt_t *p_ble_evt) {
     ads1291_2_wake();
 #if LEDS_ENABLE == 1
     nrf_gpio_pin_set(LED_2);
-//    nrf_gpio_pin_clear(LED_1);
+    nrf_gpio_pin_clear(LED_1);
 #endif
     NRF_LOG_INFO("Connected.\r\n");
     m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
@@ -550,7 +555,7 @@ static void ble_evt_dispatch(ble_evt_t *p_ble_evt) {
 static void sys_evt_dispatch(uint32_t sys_evt) {
   // Dispatch the system event to the fstorage module, where it will be
   // dispatched to the Flash Data Storage (FDS) module.
-  fs_sys_event_handler(sys_evt);
+  //fs_sys_event_handler(sys_evt);
 
   // Dispatch to the Advertising module last, since it will check if there are any
   // pending flash operations in fstorage. Let fstorage process system events first,
@@ -754,16 +759,40 @@ void saadc_init(void) {
 }
 #endif
 
+
+uint16_t get_max(const uint16_t X[1000])
+{
+  uint16_t Y;
+  uint16_t ix;
+
+  /* 'get_max:5' Y = int16(max(X)); */
+  Y = X[0];
+  for (ix = 0; ix < 999; ix++) {
+    if (X[ix + 1] > Y) {
+      Y = X[ix + 1];
+    }
+  }
+
+  /* *single(max(X_r)); */
+  return Y;
+}
+
+
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   UNUSED_PARAMETER(pin);
   UNUSED_PARAMETER(action);
   if (m_connected) {
 #if ADS1291_2_REGDEFAULT_CONFIG1 == 0x06
   get_eeg_voltage_array_2ch(&m_eeg);
-//get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
-//  m_eeg.eeg_ch1_count+=2;
 #else
   get_eeg_voltage_array_2ch(&m_eeg);
+  //get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
+  /*if (m_eeg.ecg_data_buffer_count == 1000) {
+    m_eeg.ecg_data_buffer_count = 0;
+    // TODO: Run Data Through Peak Detection Algorithm:
+    uint16_t test = get_max(m_eeg.ecg_data_buffer);
+    NRF_LOG_INFO("MaxInt: %d \r\n", test);
+  }*/
 #endif
   }
 #if defined(APP_TIMER_SAMPLING) && APP_TIMER_SAMPLING == 1
@@ -784,9 +813,9 @@ static void ads1299_gpio_init(void) {
   nrf_gpio_pin_dir_set(ADS1291_2_PWDN_PIN, NRF_GPIO_PIN_DIR_OUTPUT);
 #endif
 #if defined(BOARD_2CH_ECG_RAT) && LEDS_ENABLE == 1
-//  nrf_gpio_cfg_output(LED_1);
+  nrf_gpio_cfg_output(LED_1);
   nrf_gpio_cfg_output(LED_2);
-//  nrf_gpio_pin_set(LED_1);
+  nrf_gpio_pin_set(LED_1);
   nrf_gpio_pin_set(LED_2);
 #endif
 #ifdef BATTERY_LOAD_SWITCH_CTRL_PIN
@@ -848,6 +877,7 @@ int main(void) {
   // Put AFE to sleep while we're not connected
   ads1291_2_standby();
   nrf_delay_ms(10);
+  m_eeg.ecg_data_buffer_count = 0;
   m_eeg.eeg_ch1_count = 0;
 #endif
 
@@ -862,7 +892,7 @@ int main(void) {
   NRF_LOG_FLUSH();
 #if LEDS_ENABLE == 1
   nrf_gpio_pin_clear(LED_2); // Green
-//  nrf_gpio_pin_set(LED_1);   //Blue
+  nrf_gpio_pin_set(LED_1);   //Blue
 #endif
 #if defined(APP_TIMER_SAMPLING) && APP_TIMER_SAMPLING == 1
   m_samples = 0;

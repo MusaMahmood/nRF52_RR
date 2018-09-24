@@ -235,6 +235,7 @@ LDFLAGS += --specs=nano.specs -lc -lnosys
 # ARM_MATH_CM4 Flags for computation.
 CFLAGS += -DARM_MATH_CM4
 ASMFLAGS += -DARM_MATH_CM4
+LDFLAGS += -u _printf_float
 
 
 .PHONY: $(TARGETS) default all clean help flash flash_softdevice
