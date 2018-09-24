@@ -640,10 +640,8 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                 graphAdapter?.setSeriesHistoryDataPoints(1250)
                 var i = 0
                 while (i < dataChannel.dataBuffer!!.size / 4) {
-                    val bytes = arrayOf(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4* i +3]).toByteArray()
                     //Big Endian:
-//                    graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToFloat(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4 * i + 3]).toDouble(), dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 4 + i)
-                    // Lil endian
+                    val bytes = arrayOf(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4* i +3]).toByteArray()
                     graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToFloat(bytes).toDouble(), dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 4 + i)
                     i += graphAdapter.sampleRate / 250
                 }

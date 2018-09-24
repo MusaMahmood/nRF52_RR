@@ -12,9 +12,9 @@ import java.util.*
  */
 
 internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classification:
-                           var classificationBufferSize: Int) {
+                           private var classificationBufferSize: Int) {
     var characteristicDataPacketBytes: ByteArray? = null
-    var packetCounter: Short = 0
+    private var packetCounter: Short = 0
     var totalDataPointsReceived: Int = 0
     var dataBuffer: ByteArray? = null
     var classificationBuffer: DoubleArray
@@ -42,10 +42,7 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
             this.dataBuffer = newDataPacket
         }
         for (i in 0 until newDataPacket.size / 4) {
-            //Big Endian:
-//            val bytes = arrayOf(newDataPacket[4 * i + 0], newDataPacket[4 * i + 1], newDataPacket[4 * i + 2], newDataPacket[4 * i + 3]).toByteArray()
-            // Lil Endian:
-            val bytes = arrayOf(newDataPacket[4 * i + 3], newDataPacket[4 * i + 2], newDataPacket[4 * i + 1], newDataPacket[4* i + 0]).toByteArray()
+            val bytes = arrayOf(newDataPacket[4 * i + 0], newDataPacket[4 * i + 1], newDataPacket[4 * i + 2], newDataPacket[4 * i + 3]).toByteArray() //Big Endian:
             addToBuffer(bytesToFloat(bytes).toDouble())
         }
         Log.e(TAG, "classificationBuffer: ${Arrays.toString(this.classificationBuffer)}")
@@ -114,25 +111,6 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
             return ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN).float
         }
 
-        fun bytesToFloat(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Float {
-            val mantissa = unsignedToSigned(unsignedByteToInt(b0)
-                    + (unsignedByteToInt(b1) shl 8)
-                    + (unsignedByteToInt(b2) shl 16), 24)
-            return (mantissa * Math.pow(10.0, b3.toDouble())).toFloat()
-        }
-
-        /**
-         * Convert an unsigned integer value to a two's-complement encoded
-         * signed value.
-         */
-        private fun unsignedToSigned(unsigned: Int, size: Int): Int {
-            var unsignedOut = unsigned
-            if (unsignedOut and (1 shl size - 1) != 0) {
-                unsignedOut = -1 * ((1 shl size - 1) - (unsignedOut and (1 shl size - 1) - 1))
-            }
-            return unsignedOut
-        }
-
         private fun unsignedToSigned24bit(unsigned: Int): Int {
             return if (unsigned and 0x800000 != 0) -1 * (0x800000 - (unsigned and 0x800000 - 1))
             else unsigned
@@ -155,12 +133,5 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
         private fun unsignedByteToInt(b: Byte): Int {
             return (b.toInt() and 0xFF)
         }
-
-//        private fun unsignedToSigned(unsignedInt: Int, size: Int): Int {
-//            var unsigned = unsignedInt
-//            if (unsigned and (1 shl size - 1) != 0) unsigned = -1 * ((1 shl size - 1) - (unsigned and (1 shl size - 1) - 1))
-//            return unsigned
-//        }
     }
-
 }
