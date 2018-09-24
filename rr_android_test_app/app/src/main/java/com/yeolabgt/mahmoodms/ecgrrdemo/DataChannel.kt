@@ -1,6 +1,10 @@
-package com.yeolabgt.mahmoodms.ecgmpu1chdemo
+package com.yeolabgt.mahmoodms.ecgrrdemo
 
+import android.util.Log
 import com.google.common.primitives.Bytes
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.*
 
 /**
  * Created by mmahmood31 on 9/19/2017.
@@ -37,10 +41,15 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
         } else {
             this.dataBuffer = newDataPacket
         }
-        for (i in 0 until newDataPacket.size / 3) {
-            addToBuffer(bytesToDouble(newDataPacket[3 * i], newDataPacket[3 * i + 1], newDataPacket[3 * i + 2]))
+        for (i in 0 until newDataPacket.size / 4) {
+            //Big Endian:
+//            val bytes = arrayOf(newDataPacket[4 * i + 0], newDataPacket[4 * i + 1], newDataPacket[4 * i + 2], newDataPacket[4 * i + 3]).toByteArray()
+            // Lil Endian:
+            val bytes = arrayOf(newDataPacket[4 * i + 3], newDataPacket[4 * i + 2], newDataPacket[4 * i + 1], newDataPacket[4* i + 0]).toByteArray()
+            addToBuffer(bytesToFloat(bytes).toDouble())
         }
-        this.totalDataPointsReceived += newDataPacket.size / 3
+        Log.e(TAG, "classificationBuffer: ${Arrays.toString(this.classificationBuffer)}")
+        this.totalDataPointsReceived += newDataPacket.size / 4
         this.packetCounter++
     }
 
@@ -60,6 +69,8 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
 
     companion object {
         private var MSBFirst: Boolean = false
+
+        private val TAG = DataChannel::class.java.simpleName
 
         fun bytesToDoubleMPUAccel(a1: Byte, a2: Byte): Double {
             val unsigned: Int = unsignedBytesToInt(a1, a2, MSBFirst)
@@ -99,6 +110,29 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
                 unsigned
         }
 
+        fun bytesToFloat(byteArray: ByteArray): Float {
+            return ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN).float
+        }
+
+        fun bytesToFloat(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Float {
+            val mantissa = unsignedToSigned(unsignedByteToInt(b0)
+                    + (unsignedByteToInt(b1) shl 8)
+                    + (unsignedByteToInt(b2) shl 16), 24)
+            return (mantissa * Math.pow(10.0, b3.toDouble())).toFloat()
+        }
+
+        /**
+         * Convert an unsigned integer value to a two's-complement encoded
+         * signed value.
+         */
+        private fun unsignedToSigned(unsigned: Int, size: Int): Int {
+            var unsignedOut = unsigned
+            if (unsignedOut and (1 shl size - 1) != 0) {
+                unsignedOut = -1 * ((1 shl size - 1) - (unsignedOut and (1 shl size - 1) - 1))
+            }
+            return unsignedOut
+        }
+
         private fun unsignedToSigned24bit(unsigned: Int): Int {
             return if (unsigned and 0x800000 != 0) -1 * (0x800000 - (unsigned and 0x800000 - 1))
             else unsigned
@@ -128,4 +162,5 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
 //            return unsigned
 //        }
     }
+
 }

@@ -18,7 +18,7 @@
 
 extern "C" {
 JNIEXPORT jfloatArray JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jecgFiltRescale(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jecgFiltRescale(
         JNIEnv *env, jobject jobject1, jdoubleArray data) {
     jdouble *X = env->GetDoubleArrayElements(data, NULL);
     float Y[2000];
@@ -32,7 +32,7 @@ Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jecgFiltRescale(
 
 extern "C" {
 JNIEXPORT jfloatArray JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jrearrange5c(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jrearrange5c(
         JNIEnv *env, jobject jobject1, jfloatArray data) {
     jfloat *X = env->GetFloatArrayElements(data, NULL);
     float Y[10000];
@@ -47,7 +47,7 @@ Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jrearrange5c(
 
 extern "C" {
 JNIEXPORT jfloatArray JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jgetClassDist(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jgetClassDist(
         JNIEnv *env, jobject jobject1, jfloatArray data) {
     jfloat *X = env->GetFloatArrayElements(data, NULL);
     float Y[6];
@@ -64,7 +64,7 @@ Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jgetClassDist(
 
 extern "C" {
 JNIEXPORT jdoubleArray JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jecgBandStopFilter(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jecgBandStopFilter(
         JNIEnv *env, jobject jobject1, jdoubleArray data) {
     jdouble *X1 = env->GetDoubleArrayElements(data, NULL);
     double Y[1000]; // First two values = Y; last 499 = cPSD
@@ -79,7 +79,7 @@ Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jecgBandStopFilt
 
 extern "C" {
 JNIEXPORT jdoubleArray JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jdownSample(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jdownSample(
         JNIEnv *env, jobject jobject1, jdoubleArray data, jint Fs) {
     jdouble *X1 = env->GetDoubleArrayElements(data, NULL);
     int Xsize[1] = {Fs*4};
@@ -96,7 +96,7 @@ Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jdownSample(
 
 extern "C" {
 JNIEXPORT jfloatArray JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jSSVEPCfilter(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jSSVEPCfilter(
         JNIEnv *env, jobject jobject1, jdoubleArray data) {
     jdouble *X1 = env->GetDoubleArrayElements(data, NULL);
     float Y[1000]; // First two values = Y; last 499 = cPSD
@@ -116,7 +116,7 @@ JNIEXPORT jdoubleArray JNICALL
  * @param jobject1
  * @return array of frequencies (Hz) corresponding to a raw input signal.
  */
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jLoadfPSD(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jLoadfPSD(
         JNIEnv *env, jobject jobject1, jint sampleRate) {
     jdoubleArray m_result = env->NewDoubleArray(sampleRate);
     double fPSD[sampleRate];
@@ -130,7 +130,7 @@ Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jLoadfPSD(
 
 extern "C" {
 JNIEXPORT jint JNICALL
-Java_com_yeolabgt_mahmoodms_ecgmpu1chdemo_DeviceControlActivity_jmainInitialization(
+Java_com_yeolabgt_mahmoodms_ecgrrdemo_DeviceControlActivity_jmainInitialization(
         JNIEnv *env, jobject obj, jboolean initialize) {
     if (!(bool) initialize) {
         downsample_250Hz_initialize();

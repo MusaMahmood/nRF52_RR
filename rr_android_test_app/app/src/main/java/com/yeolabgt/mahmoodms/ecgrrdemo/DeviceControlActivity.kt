@@ -1,4 +1,4 @@
-package com.yeolabgt.mahmoodms.ecgmpu1chdemo
+package com.yeolabgt.mahmoodms.ecgrrdemo
 
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
@@ -80,9 +80,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     private val batteryWarning = 20
     private var dataRate: Double = 0.toDouble()
     // Tensorflow Implementation:
-    private val INPUT_DATA_FEED_KEY = "input_1"
-    private val OUTPUT_DATA_FEED_KEY = "conv1d_8/truediv"
-
     private var mTFRunModel = false
     private var mTensorFlowInferenceInterface: TensorFlowInferenceInterface? = null
     private var mOutputScoresNames: Array<String>? = null
@@ -276,7 +273,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             Toast.makeText(this, "No Devices Queued, Restart!", Toast.LENGTH_SHORT).show()
         }
         mActBle = ActBle(this, mBluetoothManager, this)
-        mBluetoothGattArray = Array(deviceMacAddresses!!.size, { i -> mActBle!!.connect(mBluetoothDeviceArray[i]) })
+        mBluetoothGattArray = Array(deviceMacAddresses!!.size) { i -> mActBle!!.connect(mBluetoothDeviceArray[i]) }
         for (i in mBluetoothDeviceArray.indices) {
             Log.e(TAG, "Connecting to Device: " + (mBluetoothDeviceArray[i]!!.name + " " + mBluetoothDeviceArray[i]!!.address))
             if ("EMG 250Hz" == mBluetoothDeviceArray[i]!!.name) {
@@ -320,11 +317,11 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         val directory = "/ECGData"
         val fileNameTimeStamped = "ECGData_" + mTimeStamp + "_" + mSampleRate.toString() + "Hz"
         if (mPrimarySaveDataFile == null) {
-            Log.e(TAG, "fileTimeStamp: " + fileNameTimeStamped)
+            Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped")
             mPrimarySaveDataFile = SaveDataFile(directory, fileNameTimeStamped,
                     24, 1.toDouble() / mSampleRate, true, false)
         } else if (!mPrimarySaveDataFile!!.initialized) {
-            Log.e(TAG, "New Filename: " + fileNameTimeStamped)
+            Log.e(TAG, "New Filename: $fileNameTimeStamped")
             mPrimarySaveDataFile?.createNewFile(directory, fileNameTimeStamped)
         }
 
@@ -340,13 +337,13 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
 
     private fun createNewFileMPU() {
         val directory = "/MPUData"
-        val fileNameTimeStamped = "MPUData_" + mTimeStamp
+        val fileNameTimeStamped = "MPUData_$mTimeStamp"
         if (mSaveFileMPU == null) {
-            Log.e(TAG, "fileTimeStamp: " + fileNameTimeStamped)
+            Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped")
             mSaveFileMPU = SaveDataFile(directory, fileNameTimeStamped,
                     16, 0.032, true, false)
         } else if (!mSaveFileMPU!!.initialized) {
-            Log.e(TAG, "New Filename: " + fileNameTimeStamped)
+            Log.e(TAG, "New Filename: $fileNameTimeStamped")
             mSaveFileMPU?.createNewFile(directory, fileNameTimeStamped)
         }
     }
@@ -559,7 +556,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                     mActBle!!.setCharacteristicNotifications(gatt, service.getCharacteristic(AppConstant.CHAR_MPU_COMBINED), true)
                     //TODO: INITIALIZE MPU FILE HERE:
                     mMPU = DataChannel(false, true, 0)
-//                    mSaveFileMPU = null
                     createNewFileMPU()
                 }
             }
@@ -598,9 +594,10 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             if (!mCh1!!.chEnabled) mCh1!!.chEnabled = true
             val mNewEEGdataBytes = characteristic.value
             getDataRateBytes(mNewEEGdataBytes.size)
+            //TODO: IMPLEMENT FLOAT INTERPRETATION
             mCh1!!.handleNewData(mNewEEGdataBytes)
             addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
-            mPrimarySaveDataFile!!.writeToDisk(mCh1!!.characteristicDataPacketBytes)
+//            mPrimarySaveDataFile!!.writeToDisk(mCh1!!.characteristicDataPacketBytes)
             // For every 2000 dp recieved, run classification model.
             if (mCh1!!.totalDataPointsReceived % 1040 == 0 && mCh1!!.totalDataPointsReceived != 0) {
                 Log.e(TAG, "Total datapoints: ${mCh1!!.totalDataPointsReceived}")
@@ -641,22 +638,14 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         } else {
             if (dataChannel.dataBuffer != null) {
                 graphAdapter?.setSeriesHistoryDataPoints(1250)
-                if (mPrimarySaveDataFile!!.resolutionBits == 24) {
-                    var i = 0
-                    while (i < dataChannel.dataBuffer!!.size / 3) {
-                        graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToDouble(dataChannel.dataBuffer!![3 * i],
-                                dataChannel.dataBuffer!![3 * i + 1], dataChannel.dataBuffer!![3 * i + 2]),
-                                dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 3 + i)
-                        i += graphAdapter.sampleRate / 250
-                    }
-                } else if (mPrimarySaveDataFile!!.resolutionBits == 16) {
-                    var i = 0
-                    while (i < dataChannel.dataBuffer!!.size / 2) {
-                        graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToDouble(dataChannel.dataBuffer!![2 * i],
-                                dataChannel.dataBuffer!![2 * i + 1]),
-                                dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 2 + i)
-                        i += graphAdapter.sampleRate / 250
-                    }
+                var i = 0
+                while (i < dataChannel.dataBuffer!!.size / 4) {
+                    val bytes = arrayOf(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4* i +3]).toByteArray()
+                    //Big Endian:
+//                    graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToFloat(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4 * i + 3]).toDouble(), dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 4 + i)
+                    // Lil endian
+                    graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToFloat(bytes).toDouble(), dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 4 + i)
+                    i += graphAdapter.sampleRate / 250
                 }
             }
         }
@@ -860,7 +849,9 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     private external fun jgetClassDist(data: FloatArray): FloatArray
 
     companion object {
-        const val HZ = "0 Hz"
+        private const val INPUT_DATA_FEED_KEY = "input_1"
+        private const val OUTPUT_DATA_FEED_KEY = "conv1d_8/truediv"
+        private const val HZ = "0 Hz"
         private val TAG = DeviceControlActivity::class.java.simpleName
         var mRedrawer: Redrawer? = null
         // Power Spectrum Graph Data:

@@ -1,4 +1,4 @@
-package com.yeolabgt.mahmoodms.ecgmpu1chdemo
+package com.yeolabgt.mahmoodms.ecgrrdemo
 
 import android.app.Activity
 import android.os.Bundle
