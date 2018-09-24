@@ -15,7 +15,6 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.support.v4.app.NavUtils
 import android.support.v4.content.FileProvider
@@ -31,8 +30,6 @@ import android.widget.ToggleButton
 import com.androidplot.util.Redrawer
 import com.yeolabgt.mahmoodms.actblelibrary.ActBle
 import kotlinx.android.synthetic.main.activity_device_control.*
-import org.tensorflow.contrib.android.TensorFlowInferenceInterface
-import java.io.File
 
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -72,46 +69,9 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     //Data Variables:
     private val batteryWarning = 20
     private var dataRate: Double = 0.toDouble()
-    // Tensorflow Implementation:
-    private var mTFRunModel = false
-    private var mTensorFlowInferenceInterface: TensorFlowInferenceInterface? = null
-    private var mOutputScoresNames: Array<String>? = null
-    private var mTensorflowInputXDim = 1L
-    private var mTensorflowInputYDim = 1L
-    private var mTensorflowOutputXDim = 1L
-    private var mTensorflowOutputYDim = 1L
-    private var mNumberOfClassifierCalls = 0
-
 
     private val mTimeStamp: String
         get() = SimpleDateFormat("yyyy.MM.dd_HH.mm.ss", Locale.US).format(Date())
-
-    private fun enableTensorflowModel() {
-        val classificationModelBinary = "opt_incart_annotate.pb"
-        val classificationModelPath = Environment.getExternalStorageDirectory().absolutePath +
-                "/Download/tensorflow_assets/ecg_classify/" + classificationModelBinary
-        Log.e(TAG, "Tensorflow classification Model Path: $classificationModelPath")
-        mTensorflowInputXDim = 2000
-        mTensorflowInputYDim = 1
-        mTensorflowOutputXDim = 2000
-        mTensorflowOutputYDim = 1
-        when {
-            File(classificationModelPath).exists() -> {
-                mTensorFlowInferenceInterface = TensorFlowInferenceInterface(assets, classificationModelPath)
-                // Reset counter:
-                mNumberOfClassifierCalls = 1
-                mTFRunModel = true
-                Log.i(TAG, "Tensorflow - Custom classification Model Loaded: $classificationModelBinary")
-            }
-            else -> {
-                mTFRunModel = false
-                Toast.makeText(applicationContext, "No TF Model Found!", Toast.LENGTH_LONG).show()
-            }
-        }
-        if (mTFRunModel) {
-            Toast.makeText(applicationContext, "Tensorflow classification Model Loaded!", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -158,14 +118,10 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         // Tensorflow Switch
         tensorflowClassificationSwitch.setOnCheckedChangeListener { _, b ->
             if (b) {
-                enableTensorflowModel()
             } else {
-                mTFRunModel = false
-                mNumberOfClassifierCalls = 1
                 Toast.makeText(applicationContext, "Tensorflow Disabled", Toast.LENGTH_SHORT).show()
             }
         }
-        mOutputScoresNames = arrayOf(OUTPUT_DATA_FEED_KEY)
     }
 
     private fun exportData() {
@@ -179,12 +135,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         val context = applicationContext
         val uii = FileProvider.getUriForFile(context, context.packageName + ".provider", mPrimarySaveDataFile!!.file)
         files.add(uii)
-        if (mSaveFileMPU != null) {
-            val uii2 = FileProvider.getUriForFile(context, context.packageName + ".provider", mSaveFileMPU!!.file)
-            files.add(uii2)
-        }
-        val uii3 = FileProvider.getUriForFile(context, context.packageName + ".provider", mTensorflowOutputsSaveFile!!.file)
-        files.add(uii3)
         val exportData = Intent(Intent.ACTION_SEND_MULTIPLE)
         exportData.putExtra(Intent.EXTRA_SUBJECT, "ECG Sensor Data Export Details")
         exportData.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files)
@@ -195,8 +145,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     @Throws(IOException::class)
     private fun terminateDataFileWriter() {
         mPrimarySaveDataFile?.terminateDataFileWriter()
-        mSaveFileMPU?.terminateDataFileWriter()
-        mTensorflowOutputsSaveFile?.terminateDataFileWriter()
     }
 
     public override fun onResume() {
@@ -275,28 +223,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         } else if (!mPrimarySaveDataFile!!.initialized) {
             Log.e(TAG, "New Filename: $fileNameTimeStamped")
             mPrimarySaveDataFile?.createNewFile(directory, fileNameTimeStamped)
-        }
-
-        // Tensorflow Stuff:
-        val directory2 = "/ECG_TF_data_out"
-        val fileNameTimeStamped2 = "ECG_TF_data_" + mTimeStamp + "_" + mSampleRate.toString() + "Hz"
-        if (mTensorflowOutputsSaveFile == null) {
-            Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped2")
-            mTensorflowOutputsSaveFile = SaveDataFile(directory2, fileNameTimeStamped2, 24, 1.toDouble() / mSampleRate,
-                    saveTimestamps = false, includeClass = false)
-        }
-    }
-
-    private fun createNewFileMPU() {
-        val directory = "/MPUData"
-        val fileNameTimeStamped = "MPUData_$mTimeStamp"
-        if (mSaveFileMPU == null) {
-            Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped")
-            mSaveFileMPU = SaveDataFile(directory, fileNameTimeStamped,
-                    16, 0.032, true, false)
-        } else if (!mSaveFileMPU!!.initialized) {
-            Log.e(TAG, "New Filename: $fileNameTimeStamped")
-            mSaveFileMPU?.createNewFile(directory, fileNameTimeStamped)
         }
     }
 
@@ -489,8 +415,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
 
                 if (AppConstant.SERVICE_MPU == service.uuid) {
                     mActBle!!.setCharacteristicNotifications(gatt, service.getCharacteristic(AppConstant.CHAR_MPU_COMBINED), true)
-                    mMPU = DataChannel(false, true, 0)
-                    createNewFileMPU()
                 }
             }
             //Run process only once:
@@ -556,7 +480,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                 var i = 0
                 while (i < dataChannel.dataBuffer!!.size / 4) {
                     //Big Endian:
-                    val bytes = arrayOf(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4* i +3]).toByteArray()
+                    val bytes = arrayOf(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4 * i + 3]).toByteArray()
                     graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToFloat(bytes).toDouble(), dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 4 + i)
                     i += graphAdapter.sampleRate / 250
                 }
@@ -732,15 +656,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
 
     private external fun jmainInitialization(initialize: Boolean): Int
 
-    private external fun jecgFiltRescale(data: DoubleArray): FloatArray
-
-    private external fun jrearrange5c(data: FloatArray): FloatArray
-
-    private external fun jgetClassDist(data: FloatArray): FloatArray
-
     companion object {
-        private const val INPUT_DATA_FEED_KEY = "input_1"
-        private const val OUTPUT_DATA_FEED_KEY = "conv1d_8/truediv"
         private const val HZ = "0 Hz"
         private val TAG = DeviceControlActivity::class.java.simpleName
         var mRedrawer: Redrawer? = null
@@ -749,17 +665,13 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         //Data Channel Classes
         internal var mCh1: DataChannel? = null
         internal var mCh2: DataChannel? = null
-        internal var mMPU: DataChannel? = null
         internal var mFilterData = false
         private var mPacketBuffer = 6
-        private var mTimestampIdxMPU = 0
         //RSSI:
         private const val RSSI_UPDATE_TIME_INTERVAL = 2000
         var mSSVEPClass = 0.0
         //Save Data File
         private var mPrimarySaveDataFile: SaveDataFile? = null
-        private var mTensorflowOutputsSaveFile: SaveDataFile? = null
-        private var mSaveFileMPU: SaveDataFile? = null
 
         init {
             System.loadLibrary("ecg-lib")
