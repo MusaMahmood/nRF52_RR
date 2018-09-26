@@ -454,7 +454,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             getDataRateBytes(mNewEEGdataBytes.size)
             mCh1!!.handleNewData(mNewEEGdataBytes)
             addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
-//            mPrimarySaveDataFile!!.writeToDisk(mCh1!!.characteristicDataPacketBytes)
+            Log.e(TAG, "Packets Received: ${mCh1?.totalPacketsReceived}")
         }
 
         if (AppConstant.CHAR_EEG_CH2_SIGNAL == characteristic.uuid) {

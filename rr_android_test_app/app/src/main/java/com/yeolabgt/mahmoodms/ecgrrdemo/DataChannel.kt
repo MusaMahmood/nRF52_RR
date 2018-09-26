@@ -1,10 +1,8 @@
 package com.yeolabgt.mahmoodms.ecgrrdemo
 
-import android.util.Log
 import com.google.common.primitives.Bytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.*
 
 /**
  * Created by mmahmood31 on 9/19/2017.
@@ -13,15 +11,15 @@ import java.util.*
 
 internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classification:
                            private var classificationBufferSize: Int) {
-    var characteristicDataPacketBytes: ByteArray? = null
-    private var packetCounter: Short = 0
     var totalDataPointsReceived: Int = 0
+    private var characteristicDataPacketBytes: ByteArray? = null
+    var totalPacketsReceived: Long = 0
     var dataBuffer: ByteArray? = null
     var classificationBuffer: DoubleArray
     private var classificationBufferFloats: FloatArray
 
     init {
-        this.packetCounter = 0
+        this.totalPacketsReceived = 0
         this.totalDataPointsReceived = 0
         this.classificationBuffer = DoubleArray(classificationBufferSize)
         this.classificationBufferFloats = FloatArray(classificationBufferSize)
@@ -45,9 +43,8 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
             val bytes = arrayOf(newDataPacket[4 * i + 0], newDataPacket[4 * i + 1], newDataPacket[4 * i + 2], newDataPacket[4 * i + 3]).toByteArray() //Big Endian:
             addToBuffer(bytesToFloat(bytes).toDouble())
         }
-        Log.e(TAG, "classificationBuffer: ${Arrays.toString(this.classificationBuffer)}")
         this.totalDataPointsReceived += newDataPacket.size / 4
-        this.packetCounter++
+        this.totalPacketsReceived++
     }
 
     private fun addToBuffer(a: Double) {
@@ -61,13 +58,10 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
 
     fun resetBuffer() {
         this.dataBuffer = null
-        this.packetCounter = 0
     }
 
     companion object {
         private var MSBFirst: Boolean = false
-
-        private val TAG = DataChannel::class.java.simpleName
 
         fun bytesToDoubleMPUAccel(a1: Byte, a2: Byte): Double {
             val unsigned: Int = unsignedBytesToInt(a1, a2, MSBFirst)
