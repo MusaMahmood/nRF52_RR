@@ -67,8 +67,8 @@ typedef struct
   // Background Monitoring Data:
   uint16_t ecg_data_buffer[1000];
   uint8_t ecg_data_buffer_float[4000];
+  float ecg_data_float[1000];
   uint16_t ecg_data_buffer_count;
-  //float f_buffer[1000];
 } ble_eeg_t;
 
 void ble_eeg_service_init(ble_eeg_t *p_eeg);

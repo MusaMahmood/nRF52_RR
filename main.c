@@ -118,7 +118,7 @@ static uint16_t m_samples;
 
 #if defined(C_MATLAB)
 // TODO: Stuff for External C code impl. 
-
+//#include "get_hr_rr.h"
 #endif
 
 #define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
@@ -145,7 +145,7 @@ static uint16_t m_samples;
 #define NEXT_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(30000) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                       /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define HVN_TX_QUEUE_SIZE 32 //16
+#define HVN_TX_QUEUE_SIZE 20 //16
 
 #define SEC_PARAM_BOND 1                               /**< Perform bonding. */
 #define SEC_PARAM_MITM 0                               /**< Man In The Middle protection not required. */
@@ -763,16 +763,19 @@ void float2Bytes(uint8_t* bytes_temp, float float_variable){
   memcpy(bytes_temp, (uint8_t*) (&float_variable), 4);
 }
 
-void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000])
+void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000])
 {
-  float f_temp;
+//  float float_array[1000];
+//  float f_temp;
   int i;
   for (i = 0; i < 1000; i++) {
-    f_temp = (float)X[i] / 32767.0F * 1.21F;
+    float_array[i] = (float)X[i] / 32767.0F * 1.21F;
     //NRF_LOG_ERROR( "Float[0] " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(Y[i]));
-    float2Bytes(&Y[4*i], f_temp);
+    float2Bytes(&Y[4*i], float_array[i]);
   }
 }
+
+/* Function Definitions */
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   UNUSED_PARAMETER(pin);
@@ -785,9 +788,10 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
   if (m_eeg.ecg_data_buffer_count == 1000) {
     m_eeg.ecg_data_buffer_count = 0;
-    convert_to_float_as_uint8(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_float);
+    convert_to_float_as_uint8(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_float, m_eeg.ecg_data_float);
     // TODO: Run Data Through Peak Detection Algorithm
     ble_ecg_float_update(&m_eeg);
+//    get_hr_rr(m_eeg.ecg_data_buffer, m_eeg.ecg_data_float);
   }
 #endif
   }
@@ -876,11 +880,9 @@ int main(void) {
   m_eeg.ecg_data_buffer_count = 0;
   m_eeg.eeg_ch1_count = 0;
 #endif
-
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1
   saadc_init();
 #endif
-
   // Start execution.
   application_timers_start();
   advertising_start();
