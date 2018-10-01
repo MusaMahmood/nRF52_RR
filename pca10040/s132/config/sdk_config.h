@@ -4,10 +4,6 @@
 #ifdef USE_APP_CONFIG
 #include "app_config.h"
 #endif
-// <h> nRF_BLE 
-#ifndef FAST_SPI_ENABLED 
-#define FAST_SPI_ENABLED 0
-#endif
 
 #ifndef SPI_BLOCKING_MODE 
 #define SPI_BLOCKING_MODE 0

@@ -31,9 +31,6 @@ extern "C" {
 #include "nrf_drv_spi.h"
 #include "nrf_gpio.h"
 #include "nrf_log.h"
-#if defined(FAST_SPI_ENABLED) && FAST_SPI_ENABLED == 1
-#include "spi_master_fast.h"
-#endif
 /**headers for µs delay:*/
 #include "compiler_abstraction.h"
 #include "nrf.h"
