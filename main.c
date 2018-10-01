@@ -759,21 +759,46 @@ void saadc_init(void) {
 }
 #endif
 
+void mean_shift(float X[1000])
+{
+  float y;
+  int k;
+  y = X[0];
+  for (k = 0; k < 999; k++) {
+    y += X[k + 1];
+  }
+
+  y /= 1000.0F;
+  for (k = 0; k < 1000; k++) {
+    X[k] -= y;
+  }
+}
+
 void float2Bytes(uint8_t* bytes_temp, float float_variable){ 
   memcpy(bytes_temp, (uint8_t*) (&float_variable), 4);
 }
 
+//void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000])
+//{
+//  int i;
+//  for (i = 0; i < 1000; i++) {
+//    float_array[i] = (float)X[i] / 32767.0F * 1.21F;
+//    float2Bytes(&Y[4*i], float_array[i]);
+//  }
+//}
+
 void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000])
 {
-//  float float_array[1000];
-//  float f_temp;
   int i;
   for (i = 0; i < 1000; i++) {
     float_array[i] = (float)X[i] / 32767.0F * 1.21F;
-    //NRF_LOG_ERROR( "Float[0] " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(Y[i]));
+  }
+  mean_shift(float_array);
+  for (i = 0; i < 1000; i++) {
     float2Bytes(&Y[4*i], float_array[i]);
   }
 }
+
 
 /* Function Definitions */
 
