@@ -216,12 +216,12 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     }
 
     private fun createNewFile() {
-        val directory = "/ECGData"
+        val directory = "/ECGDataRR"
         val fileNameTimeStamped = "ECGData_" + mTimeStamp + "_" + mSampleRate.toString() + "Hz"
         if (mPrimarySaveDataFile == null) {
             Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped")
             mPrimarySaveDataFile = SaveDataFile(directory, fileNameTimeStamped,
-                    24, 1.toDouble() / mSampleRate, true, false)
+                    byteResolution = 16, increment = 1.toDouble() / mSampleRate, saveTimestamps = false, includeClass = false, msbFirst = false)
         } else if (!mPrimarySaveDataFile!!.initialized) {
             Log.e(TAG, "New Filename: $fileNameTimeStamped")
             mPrimarySaveDataFile?.createNewFile(directory, fileNameTimeStamped)
@@ -456,6 +456,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             getDataRateBytes(mNewEEGdataBytes.size)
             mCh1!!.handleNewData(mNewEEGdataBytes)
             if (mCh1!!.totalPacketsReceived % 5 == 0.toLong()) {
+                mPrimarySaveDataFile!!.writeToDisk(mCh1!!.dataBuffer)
                 addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
             }
 //            Log.e(TAG, "Packets Received: ${mCh1?.totalPacketsReceived}")
@@ -480,7 +481,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         } else {
             if (dataChannel.dataBuffer != null) {
                 graphAdapter?.setSeriesHistoryDataPoints(1250)
-                for (i in 0 until dataChannel.dataBuffer!!.size/2) {
+                for (i in 0 until dataChannel.dataBuffer!!.size / 2) {
                     val xDouble = dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 2 + i
                     val yDouble = DataChannel.bytesToDouble(dataChannel.dataBuffer!![2 * i + 1], dataChannel.dataBuffer!![2 * i + 0])
                     graphAdapter!!.addDataPointTimeDomain(yDouble, xDouble)
