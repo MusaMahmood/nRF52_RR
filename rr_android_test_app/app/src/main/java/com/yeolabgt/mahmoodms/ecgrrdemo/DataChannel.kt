@@ -39,11 +39,11 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
         } else {
             this.dataBuffer = newDataPacket
         }
-        for (i in 0 until newDataPacket.size / 4) {
-            val bytes = arrayOf(newDataPacket[4 * i + 0], newDataPacket[4 * i + 1], newDataPacket[4 * i + 2], newDataPacket[4 * i + 3]).toByteArray() //Big Endian:
-            addToBuffer(bytesToFloat(bytes).toDouble())
+        for (i in 0 until newDataPacket.size / 2) {
+            if (MSBFirst) addToBuffer(bytesToDouble(newDataPacket[2 * i + 0], newDataPacket[2 * i + 1]))
+            else addToBuffer(bytesToDouble(newDataPacket[2 * i + 1], newDataPacket[2 * i + 0]))
         }
-        this.totalDataPointsReceived += newDataPacket.size / 4
+        this.totalDataPointsReceived += newDataPacket.size / 2
         this.totalPacketsReceived++
     }
 
@@ -62,7 +62,9 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
 
     companion object {
         private var MSBFirst: Boolean = false
-
+        /**
+         * All conversion methods assume Big-Endian (MSBFirst = true)
+         */
         fun bytesToDoubleMPUAccel(a1: Byte, a2: Byte): Double {
             val unsigned: Int = unsignedBytesToInt(a1, a2, MSBFirst)
             return unsignedToSigned16bit(unsigned).toDouble() / 32767.0 * 16.0
