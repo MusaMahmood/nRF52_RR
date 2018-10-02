@@ -97,6 +97,7 @@ static bool m_connected = false;
 
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1
 #include "nrf_drv_saadc.h"
+#include "app_util_platform.h"
 #define SAMPLES_IN_BUFFER 4
 #define SAADC_BURST_MODE 1 //Set to 1 to enable BURST mode, otherwise set to 0.
 static nrf_saadc_value_t m_buffer_pool[SAMPLES_IN_BUFFER];
