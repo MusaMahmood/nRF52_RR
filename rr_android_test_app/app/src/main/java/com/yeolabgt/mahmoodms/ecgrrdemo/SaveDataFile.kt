@@ -15,11 +15,13 @@ import java.io.IOException
  */
 
 internal class SaveDataFile @Throws(IOException::class)
-constructor(directory: String, fileName: String, byteResolution: Int, increment: Double, saveTimestamps: Boolean = false, includeClass: Boolean = false) {
+constructor(directory: String, fileName: String, byteResolution: Int, increment: Double, saveTimestamps: Boolean = false, includeClass: Boolean = false,
+            msbFirst: Boolean = true) {
     //Math Stuff
     var mLinesWrittenCurrentFile: Int = 0
     private var mLinesWrittenTotal: Long = 0 //for timestamp
     private var mIncrement: Double = 0.toDouble()
+    private var mMSBFirst: Boolean = false
     private var fpPrecision: Short = 64 //float vs double (default)
     var initialized = false
     var resolutionBits: Int = 0
@@ -38,6 +40,7 @@ constructor(directory: String, fileName: String, byteResolution: Int, increment:
         //Reset total number of lines written so file starts from 0 s:
         this.mLinesWrittenCurrentFile = 0
         this.mLinesWrittenTotal = 0
+        this.mMSBFirst = msbFirst
     }
 
     fun createNewFile(directory: String, fileName: String) {
@@ -142,8 +145,12 @@ constructor(directory: String, fileName: String, byteResolution: Int, increment:
         for (ch in 0 until len) { // each channel
             if (this.resolutionBits == 16) {
                 for (dp in 0 until byteArrays[ch]!!.size / 2) { // each datapoint
-                    doubles[ch][dp] = DataChannel.bytesToDouble(byteArrays[ch]!![2 * dp],
+                    if (mMSBFirst)
+                        doubles[ch][dp] = DataChannel.bytesToDouble(byteArrays[ch]!![2 * dp],
                             byteArrays[ch]!![2 * dp + 1])
+                    else
+                        doubles[ch][dp] = DataChannel.bytesToDouble(byteArrays[ch]!![2 * dp + 1],
+                                byteArrays[ch]!![2 * dp + 0])
                 }
             } else if (this.resolutionBits == 24) {
                 for (dp in 0 until byteArrays[ch]!!.size / 3) {

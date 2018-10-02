@@ -178,6 +178,8 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             Log.e(TAG, "Connecting to Device: " + (mBluetoothDeviceArray[i]!!.name + " " + mBluetoothDeviceArray[i]!!.address))
             if ("EMG 250Hz" == mBluetoothDeviceArray[i]!!.name) {
                 mMSBFirst = false
+            } else if (mBluetoothDeviceArray[i]!!.name.toLowerCase().contains("rrecg")) {
+                mMSBFirst = true
             } else if (mBluetoothDeviceArray[i]!!.name != null) {
                 if (mBluetoothDeviceArray[i]!!.name.toLowerCase().contains("nrf52")) {
                     mMSBFirst = true
@@ -204,22 +206,22 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                     mSampleRate = 250
                 }
             }
-            mPacketBuffer = mSampleRate / 250
             Log.e(TAG, "mSampleRate: " + mSampleRate + "Hz")
             if (!mGraphInitializedBoolean) setupGraph()
 //            mPrimarySaveDataFile = null
             createNewFile()
+            Log.e(TAG, "MSBFirst: $mMSBFirst")
         }
         mBleInitializedBoolean = true
     }
 
     private fun createNewFile() {
-        val directory = "/ECGData"
+        val directory = "/ECGDataRR"
         val fileNameTimeStamped = "ECGData_" + mTimeStamp + "_" + mSampleRate.toString() + "Hz"
         if (mPrimarySaveDataFile == null) {
             Log.e(TAG, "fileTimeStamp: $fileNameTimeStamped")
             mPrimarySaveDataFile = SaveDataFile(directory, fileNameTimeStamped,
-                    24, 1.toDouble() / mSampleRate, true, false)
+                    byteResolution = 16, increment = 1.toDouble() / mSampleRate, saveTimestamps = false, includeClass = false, msbFirst = false)
         } else if (!mPrimarySaveDataFile!!.initialized) {
             Log.e(TAG, "New Filename: $fileNameTimeStamped")
             mPrimarySaveDataFile?.createNewFile(directory, fileNameTimeStamped)
@@ -240,7 +242,7 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         mRedrawer!!.start()
         mGraphInitializedBoolean = true
 
-        mGraphAdapterCh1!!.setxAxisIncrementFromSampleRate(mSampleRate)
+        mGraphAdapterCh1!!.setxAxisIncrementFromSampleRate(63)
         mGraphAdapterCh2!!.setxAxisIncrementFromSampleRate(mSampleRate)
 
         mGraphAdapterCh1!!.setSeriesHistoryDataPoints(1250)
@@ -453,8 +455,11 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             val mNewEEGdataBytes = characteristic.value
             getDataRateBytes(mNewEEGdataBytes.size)
             mCh1!!.handleNewData(mNewEEGdataBytes)
-            addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
-            Log.e(TAG, "Packets Received: ${mCh1?.totalPacketsReceived}")
+            if (mCh1!!.totalPacketsReceived % 5 == 0.toLong()) {
+                mPrimarySaveDataFile!!.writeToDisk(mCh1!!.dataBuffer)
+                addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
+            }
+//            Log.e(TAG, "Packets Received: ${mCh1?.totalPacketsReceived}")
         }
 
         if (AppConstant.CHAR_EEG_CH2_SIGNAL == characteristic.uuid) {
@@ -470,19 +475,17 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             graphAdapter?.setSeriesHistoryDataPoints(graphBufferLength)
             val filteredData = jecgBandStopFilter(filterArray)
             graphAdapter!!.clearPlot()
-
             for (i in filteredData.indices) { // gA.addDataPointTimeDomain(y,x)
                 graphAdapter.addDataPointTimeDomainAlt(filteredData[i], dataChannel.totalDataPointsReceived - (graphBufferLength - 1) + i)
             }
         } else {
             if (dataChannel.dataBuffer != null) {
                 graphAdapter?.setSeriesHistoryDataPoints(1250)
-                var i = 0
-                while (i < dataChannel.dataBuffer!!.size / 4) {
-                    //Big Endian:
-                    val bytes = arrayOf(dataChannel.dataBuffer!![4 * i], dataChannel.dataBuffer!![4 * i + 1], dataChannel.dataBuffer!![4 * i + 2], dataChannel.dataBuffer!![4 * i + 3]).toByteArray()
-                    graphAdapter!!.addDataPointTimeDomain(DataChannel.bytesToFloat(bytes).toDouble(), dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 4 + i)
-                    i += graphAdapter.sampleRate / 250
+                for (i in 0 until dataChannel.dataBuffer!!.size / 2) {
+                    val xDouble = dataChannel.totalDataPointsReceived - dataChannel.dataBuffer!!.size / 2 + i
+                    val yDouble = DataChannel.bytesToDouble(dataChannel.dataBuffer!![2 * i + 1], dataChannel.dataBuffer!![2 * i + 0])
+                    graphAdapter!!.addDataPointTimeDomain(yDouble, xDouble)
+//                    Log.e(TAG, "[$xDouble->${xDouble*graphAdapter.xAxisIncrement}:$yDouble]")
                 }
             }
         }
@@ -666,7 +669,6 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
         internal var mCh1: DataChannel? = null
         internal var mCh2: DataChannel? = null
         internal var mFilterData = false
-        private var mPacketBuffer = 6
         //RSSI:
         private const val RSSI_UPDATE_TIME_INTERVAL = 2000
         var mSSVEPClass = 0.0

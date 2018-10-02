@@ -97,6 +97,7 @@ static bool m_connected = false;
 
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1
 #include "nrf_drv_saadc.h"
+#include "app_util_platform.h"
 #define SAMPLES_IN_BUFFER 4
 #define SAADC_BURST_MODE 1 //Set to 1 to enable BURST mode, otherwise set to 0.
 static nrf_saadc_value_t m_buffer_pool[SAMPLES_IN_BUFFER];
@@ -134,8 +135,8 @@ static uint16_t m_samples;
 #define APP_ADV_INTERVAL 300            /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS 180  /**< The advertising timeout in units of seconds. */
 
-#define MIN_CONN_INTERVAL MSEC_TO_UNITS(7.5, UNIT_1_25_MS) /**< Minimum acceptable connection interval (0.1 seconds). */
-#define MAX_CONN_INTERVAL MSEC_TO_UNITS(20, UNIT_1_25_MS) /**< Maximum acceptable connection interval (0.2 second). */
+#define MIN_CONN_INTERVAL MSEC_TO_UNITS(1999, UNIT_1_25_MS) /**< Minimum acceptable connection interval (0.1 seconds). */
+#define MAX_CONN_INTERVAL MSEC_TO_UNITS(1999, UNIT_1_25_MS) /**< Maximum acceptable connection interval (0.2 second). */
 #define SLAVE_LATENCY 0                                   /**< Slave latency. */
 #define CONN_SUP_TIMEOUT MSEC_TO_UNITS(4000, UNIT_10_MS)  /**< Connection supervisory timeout (4 seconds). */
 
@@ -145,7 +146,7 @@ static uint16_t m_samples;
 #define NEXT_CONN_PARAMS_UPDATE_DELAY APP_TIMER_TICKS(30000) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT 3                       /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define HVN_TX_QUEUE_SIZE 20 //16
+#define HVN_TX_QUEUE_SIZE 12 //16
 
 #define SEC_PARAM_BOND 1                               /**< Perform bonding. */
 #define SEC_PARAM_MITM 0                               /**< Man In The Middle protection not required. */
@@ -759,133 +760,91 @@ void saadc_init(void) {
 }
 #endif
 
-bool rtIsNaNF(float value)
-{
-  return (value!=value)? 1U:0U; 
-}
-
-void ds_filter(const float X[1000], float X0[500])
-{
-  int ixstart;
-  float mtmp;
-  int ix;
-  bool exitg1;
-  float b_mtmp;
-  memset(&X0[0], 0, 500U * sizeof(float));
-  for (ixstart = 0; ixstart < 499; ixstart++) {
-    X0[ixstart] = (X[((1 + ixstart) << 1) - 1] + X[(1 + ixstart) << 1]) / 2.0F;
-  }
-
-  X0[499] = (X[998] + X[999]) / 2.0F;
-  ixstart = 1;
-  mtmp = X0[0];
-  if (rtIsNaNF(X0[0])) {
-    ix = 2;
-    exitg1 = false;
-    while ((!exitg1) && (ix < 501)) {
-      ixstart = ix;
-      if (!rtIsNaNF(X0[ix - 1])) {
-        mtmp = X0[ix - 1];
-        exitg1 = true;
-      } else {
-        ix++;
-      }
-    }
-  }
-
-  if (ixstart < 500) {
-    while (ixstart + 1 < 501) {
-      if (X0[ixstart] < mtmp) {
-        mtmp = X0[ixstart];
-      }
-
-      ixstart++;
-    }
-  }
-
-  ixstart = 1;
-  b_mtmp = X0[0];
-  if (rtIsNaNF(X0[0])) {
-    ix = 2;
-    exitg1 = false;
-    while ((!exitg1) && (ix < 501)) {
-      ixstart = ix;
-      if (!rtIsNaNF(X0[ix - 1])) {
-        b_mtmp = X0[ix - 1];
-        exitg1 = true;
-      } else {
-        ix++;
-      }
-    }
-  }
-
-  if (ixstart < 500) {
-    while (ixstart + 1 < 501) {
-      if (X0[ixstart] > b_mtmp) {
-        b_mtmp = X0[ixstart];
-      }
-
-      ixstart++;
-    }
-  }
-
-  b_mtmp -= mtmp;
-  for (ixstart = 0; ixstart < 500; ixstart++) {
-    X0[ixstart] = (X0[ixstart] - mtmp) / b_mtmp;
-  }
-
-  /*  X0 = filtfilt(b, a, double(X0) );  */
-}
-
-
-void mean_shift(float X[1000])
-{
-  float y;
-  int k;
-  y = X[0];
-  for (k = 0; k < 999; k++) {
-    y += X[k + 1];
-  }
-
-  y /= 1000.0F;
-  for (k = 0; k < 1000; k++) {
-    X[k] -= y;
-  }
-}
-
-void float2Bytes(uint8_t* bytes_temp, float float_variable){ 
-  memcpy(bytes_temp, (uint8_t*) (&float_variable), 4);
-}
-
-//void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000])
-//{
-//  int i;
-//  for (i = 0; i < 1000; i++) {
-//    float_array[i] = (float)X[i] / 32767.0F * 1.21F;
-//    float2Bytes(&Y[4*i], float_array[i]);
-//  }
-//}
-
-void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000], float float_array_f[500])
+/*
+ * FAST_DS Fast downsampling of int16s:
+ * Arguments    : const short X[1000]
+ *                short Y[500]
+ * Return Type  : void
+ */
+void fast_ds(const short X[1000], short Y[500])
 {
   int i;
-  for (i = 0; i < 1000; i++) {
-    float_array[i] = (float)X[i] / 32767.0F * 1.21F;
+  int i0;
+  short A;
+  unsigned short y;
+  unsigned short q;
+  short b_y;
+  for (i = 0; i < 499; i++) {
+    i0 = X[((1 + i) << 1) - 1] + X[(1 + i) << 1];
+    if (i0 > 32767) {
+      i0 = 32767;
+    } else {
+      if (i0 < -32768) {
+        i0 = -32768;
+      }
+    }
+
+    A = (short)i0;
+    if (A >= 0) {
+      y = (unsigned short)A;
+    } else if (A == -32768) {
+      y = 32768;
+    } else {
+      y = (unsigned short)-A;
+    }
+
+    q = (unsigned short)((unsigned int)y >> 1);
+    if ((unsigned short)((unsigned int)y - (q << 1)) > 0) {
+      q++;
+    }
+
+    b_y = (short)q;
+    if (A < 0) {
+      b_y = (short)-q;
+    }
+
+    Y[i] = b_y;
   }
-  mean_shift(float_array);
-  ds_filter(float_array, float_array_f);
-  //final step v2
-  for (i = 0; i < 500; i++) {
-    float2Bytes(&Y[4*i], float_array_f[i]);
+
+  i0 = X[998] + X[999];
+  if (i0 > 32767) {
+    i0 = 32767;
+  } else {
+    if (i0 < -32768) {
+      i0 = -32768;
+    }
   }
-  //final step
-//  for (i = 0; i < 1000; i++) {
-//    float2Bytes(&Y[4*i], float_array[i]);
-//  }
+
+  A = (short)i0;
+  if (A >= 0) {
+    y = (unsigned short)A;
+  } else if (A == -32768) {
+    y = 32768;
+  } else {
+    y = (unsigned short)-A;
+  }
+
+  q = (unsigned short)((unsigned int)y >> 1);
+  if ((unsigned short)((unsigned int)y - (q << 1)) > 0) {
+    q++;
+  }
+
+  b_y = (short)q;
+  if (A < 0) {
+    b_y = (short)-q;
+  }
+
+  Y[499] = b_y;
 }
 
+void downsample(const uint16_t input[1000], uint8_t output_bytes[1000]) {
+  uint16_t downsampled_data[500]; 
+  fast_ds(input, downsampled_data);
+  for (uint16_t i = 0; i < 500; i++) { 
+      memcpy_fast(&output_bytes[2*i], &downsampled_data[i], 2);
+  }
+}
 
-/* Function Definitions */
 
 void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   UNUSED_PARAMETER(pin);
@@ -898,10 +857,8 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
   if (m_eeg.ecg_data_buffer_count == 1000) {
     m_eeg.ecg_data_buffer_count = 0;
-    convert_to_float_as_uint8(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_float, m_eeg.ecg_data_float, m_eeg.ecg_data_float_filt);
-    // TODO: Run Data Through Peak Detection Algorithm
-//    ble_ecg_float_update(&m_eeg);
-    ble_ecg_float_update2(&m_eeg);
+    downsample(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_ds);
+    ble_ecg_update(&m_eeg);
   }
 #endif
   }
