@@ -66,9 +66,7 @@ typedef struct
   uint16_t eeg_ch1_count;
   // Background Monitoring Data:
   uint16_t ecg_data_buffer[1000];
-  uint8_t ecg_data_buffer_float[4000];
-  float ecg_data_float[1000];
-  float ecg_data_float_filt[500];
+  uint8_t ecg_data_buffer_ds[1000];
   uint16_t ecg_data_buffer_count;
 } ble_eeg_t;
 
@@ -88,9 +86,10 @@ void ble_eeg_on_ble_evt(ble_eeg_t *p_eeg, ble_evt_t *p_ble_evt);
 */
 
 void ble_eeg_update_1ch_v2(ble_eeg_t *p_eeg);
+
 void ble_eeg_update_2ch(ble_eeg_t *p_eeg);
-void ble_ecg_float_update(ble_eeg_t *p_eeg);
-void ble_ecg_float_update2(ble_eeg_t *p_eeg);
+
+void ble_ecg_update(ble_eeg_t *p_eeg);
 
 
 
