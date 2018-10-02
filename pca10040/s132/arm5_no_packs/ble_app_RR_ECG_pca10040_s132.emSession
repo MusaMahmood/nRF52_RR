@@ -63,11 +63,9 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="26" y="868" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="833" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="12" y="146" useTextEdit="1" useBinaryEdit="0" left="0" path="get_hr_rr.c" selected="0" top="84" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="31" y="67" useTextEdit="1" useBinaryEdit="0" left="0" path="ble_eeg.h" selected="0" top="24" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="31" useTextEdit="1" useBinaryEdit="0" left="0" path="rt_nonfinite.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="21" useTextEdit="1" useBinaryEdit="0" left="0" path="get_hr_rr.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="68" y="900" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="823" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="91" useTextEdit="1" useBinaryEdit="0" left="0" path="ble_eeg.h" selected="0" top="60" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="235" useTextEdit="1" useBinaryEdit="0" left="0" path="ble_eeg.c" selected="0" top="210" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="ble_app_RR_ECG_pca10040_s132" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="nrf52832_xxaa" debugSearchFileMap="" fileDialogInitialDirectory="E:/Dropbox (GaTech)/NRF/nRF5_SDK_13.1.0/examples/_my_projects/nRF52_RR/pca10040/s132/arm5_no_packs" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="ble_app_RR_ECG_pca10040_s132" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="nrf52832_xxaa" debugSearchFileMap="" fileDialogInitialDirectory="E:/Dropbox (GaTech)/NRF/nRF5_SDK_13.1.0/examples/_my_projects/nRF52_RR/pca10040/s132/arm5_no_packs" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

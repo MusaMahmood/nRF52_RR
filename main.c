@@ -118,7 +118,7 @@ static uint16_t m_samples;
 
 #if defined(C_MATLAB)
 // TODO: Stuff for External C code impl. 
-//#include "get_hr_rr.h"
+
 #endif
 
 #define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
@@ -759,6 +759,85 @@ void saadc_init(void) {
 }
 #endif
 
+bool rtIsNaNF(float value)
+{
+  return (value!=value)? 1U:0U; 
+}
+
+void ds_filter(const float X[1000], float X0[500])
+{
+  int ixstart;
+  float mtmp;
+  int ix;
+  bool exitg1;
+  float b_mtmp;
+  memset(&X0[0], 0, 500U * sizeof(float));
+  for (ixstart = 0; ixstart < 499; ixstart++) {
+    X0[ixstart] = (X[((1 + ixstart) << 1) - 1] + X[(1 + ixstart) << 1]) / 2.0F;
+  }
+
+  X0[499] = (X[998] + X[999]) / 2.0F;
+  ixstart = 1;
+  mtmp = X0[0];
+  if (rtIsNaNF(X0[0])) {
+    ix = 2;
+    exitg1 = false;
+    while ((!exitg1) && (ix < 501)) {
+      ixstart = ix;
+      if (!rtIsNaNF(X0[ix - 1])) {
+        mtmp = X0[ix - 1];
+        exitg1 = true;
+      } else {
+        ix++;
+      }
+    }
+  }
+
+  if (ixstart < 500) {
+    while (ixstart + 1 < 501) {
+      if (X0[ixstart] < mtmp) {
+        mtmp = X0[ixstart];
+      }
+
+      ixstart++;
+    }
+  }
+
+  ixstart = 1;
+  b_mtmp = X0[0];
+  if (rtIsNaNF(X0[0])) {
+    ix = 2;
+    exitg1 = false;
+    while ((!exitg1) && (ix < 501)) {
+      ixstart = ix;
+      if (!rtIsNaNF(X0[ix - 1])) {
+        b_mtmp = X0[ix - 1];
+        exitg1 = true;
+      } else {
+        ix++;
+      }
+    }
+  }
+
+  if (ixstart < 500) {
+    while (ixstart + 1 < 501) {
+      if (X0[ixstart] > b_mtmp) {
+        b_mtmp = X0[ixstart];
+      }
+
+      ixstart++;
+    }
+  }
+
+  b_mtmp -= mtmp;
+  for (ixstart = 0; ixstart < 500; ixstart++) {
+    X0[ixstart] = (X0[ixstart] - mtmp) / b_mtmp;
+  }
+
+  /*  X0 = filtfilt(b, a, double(X0) );  */
+}
+
+
 void mean_shift(float X[1000])
 {
   float y;
@@ -787,16 +866,22 @@ void float2Bytes(uint8_t* bytes_temp, float float_variable){
 //  }
 //}
 
-void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000])
+void convert_to_float_as_uint8(const uint16_t X[1000], uint8_t Y[4000], float float_array[1000], float float_array_f[500])
 {
   int i;
   for (i = 0; i < 1000; i++) {
     float_array[i] = (float)X[i] / 32767.0F * 1.21F;
   }
   mean_shift(float_array);
-  for (i = 0; i < 1000; i++) {
-    float2Bytes(&Y[4*i], float_array[i]);
+  ds_filter(float_array, float_array_f);
+  //final step v2
+  for (i = 0; i < 500; i++) {
+    float2Bytes(&Y[4*i], float_array_f[i]);
   }
+  //final step
+//  for (i = 0; i < 1000; i++) {
+//    float2Bytes(&Y[4*i], float_array[i]);
+//  }
 }
 
 
@@ -813,10 +898,10 @@ void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
   if (m_eeg.ecg_data_buffer_count == 1000) {
     m_eeg.ecg_data_buffer_count = 0;
-    convert_to_float_as_uint8(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_float, m_eeg.ecg_data_float);
+    convert_to_float_as_uint8(m_eeg.ecg_data_buffer, m_eeg.ecg_data_buffer_float, m_eeg.ecg_data_float, m_eeg.ecg_data_float_filt);
     // TODO: Run Data Through Peak Detection Algorithm
-    ble_ecg_float_update(&m_eeg);
-//    get_hr_rr(m_eeg.ecg_data_buffer, m_eeg.ecg_data_float);
+//    ble_ecg_float_update(&m_eeg);
+    ble_ecg_float_update2(&m_eeg);
   }
 #endif
   }
