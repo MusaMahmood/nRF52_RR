@@ -5,7 +5,7 @@
 // File: get_hr_rr_types.h
 //
 // MATLAB Coder version            : 3.3
-// C/C++ source code generated on  : 03-Oct-2018 23:07:16
+// C/C++ source code generated on  : 04-Oct-2018 12:02:32
 //
 #ifndef GET_HR_RR_TYPES_H
 #define GET_HR_RR_TYPES_H
@@ -28,19 +28,19 @@ struct emxArray__common
 
 #endif                                 //struct_emxArray__common
 
-#ifndef struct_emxArray_boolean_T
-#define struct_emxArray_boolean_T
+#ifndef struct_emxArray_int16_T
+#define struct_emxArray_int16_T
 
-struct emxArray_boolean_T
+struct emxArray_int16_T
 {
-  boolean_T *data;
+  short *data;
   int *size;
   int allocatedSize;
   int numDimensions;
   boolean_T canFreeData;
 };
 
-#endif                                 //struct_emxArray_boolean_T
+#endif                                 //struct_emxArray_int16_T
 
 #ifndef struct_emxArray_int32_T
 #define struct_emxArray_int32_T

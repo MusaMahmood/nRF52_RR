@@ -5,7 +5,7 @@
 // File: get_hr_rr_emxutil.h
 //
 // MATLAB Coder version            : 3.3
-// C/C++ source code generated on  : 03-Oct-2018 23:07:16
+// C/C++ source code generated on  : 04-Oct-2018 12:02:32
 //
 #ifndef GET_HR_RR_EMXUTIL_H
 #define GET_HR_RR_EMXUTIL_H
@@ -21,14 +21,13 @@
 // Function Declarations
 extern void emxEnsureCapacity(emxArray__common *emxArray, int oldNumel, unsigned
   int elementSize);
-extern void emxFree_boolean_T(emxArray_boolean_T **pEmxArray);
+extern void emxFree_int16_T(emxArray_int16_T **pEmxArray);
 extern void emxFree_int32_T(emxArray_int32_T **pEmxArray);
 extern void emxFree_real_T(emxArray_real_T **pEmxArray);
-extern void emxInit_boolean_T(emxArray_boolean_T **pEmxArray, int numDimensions);
+extern void emxInit_int16_T(emxArray_int16_T **pEmxArray, int numDimensions);
 extern void emxInit_int32_T(emxArray_int32_T **pEmxArray, int numDimensions);
 extern void emxInit_int32_T1(emxArray_int32_T **pEmxArray, int numDimensions);
 extern void emxInit_real_T(emxArray_real_T **pEmxArray, int numDimensions);
-extern void emxInit_real_T1(emxArray_real_T **pEmxArray, int numDimensions);
 
 #endif
 

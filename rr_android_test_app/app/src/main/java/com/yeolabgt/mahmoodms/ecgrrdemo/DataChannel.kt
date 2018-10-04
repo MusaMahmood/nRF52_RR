@@ -40,8 +40,9 @@ internal class DataChannel(var chEnabled: Boolean, MSBFirst: Boolean, //Classifi
             this.dataBuffer = newDataPacket
         }
         for (i in 0 until newDataPacket.size / 2) {
-            if (MSBFirst) addToBuffer(bytesToDouble(newDataPacket[2 * i + 0], newDataPacket[2 * i + 1]))
-            else addToBuffer(bytesToDouble(newDataPacket[2 * i + 1], newDataPacket[2 * i + 0]))
+            /*if (MSBFirst) addToBuffer(bytesToDouble(newDataPacket[2 * i + 0], newDataPacket[2 * i + 1]))
+            else*/
+            addToBuffer(bytesToDouble(newDataPacket[2 * i + 1], newDataPacket[2 * i + 0]))
         }
         this.totalDataPointsReceived += newDataPacket.size / 2
         this.totalPacketsReceived++

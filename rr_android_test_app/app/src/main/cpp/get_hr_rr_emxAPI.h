@@ -5,7 +5,7 @@
 // File: get_hr_rr_emxAPI.h
 //
 // MATLAB Coder version            : 3.3
-// C/C++ source code generated on  : 03-Oct-2018 23:07:16
+// C/C++ source code generated on  : 04-Oct-2018 12:02:32
 //
 #ifndef GET_HR_RR_EMXAPI_H
 #define GET_HR_RR_EMXAPI_H

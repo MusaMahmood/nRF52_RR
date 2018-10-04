@@ -459,10 +459,8 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
                 mPrimarySaveDataFile!!.writeToDisk(mCh1!!.dataBuffer)
                 addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
                 // Run mCh1 Buffer Through RR detection.
-                Log.e(TAG, "mCh1Buffer: ${mCh1!!.classificationBuffer.size}")
                 val hr_rr = jgetHR(mCh1!!.classificationBuffer)  // Format: [peaks(len-2/2), locs(len-2/2), hr, rr]
-//                Log.e(TAG, "hr_rr: ${Arrays.toString(hr_rr)}")
-                Log.e(TAG, "hr_rr: ${hr_rr.size}")
+                Log.e(TAG, "hr_rr: ${hr_rr[hr_rr.size-2]}")
             }
 //            Log.e(TAG, "Packets Received: ${mCh1?.totalPacketsReceived}")
         }

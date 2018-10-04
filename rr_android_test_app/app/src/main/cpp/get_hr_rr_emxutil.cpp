@@ -5,7 +5,7 @@
 // File: get_hr_rr_emxutil.cpp
 //
 // MATLAB Coder version            : 3.3
-// C/C++ source code generated on  : 03-Oct-2018 23:07:16
+// C/C++ source code generated on  : 04-Oct-2018 12:02:32
 //
 
 // Include Files
@@ -65,20 +65,19 @@ void emxEnsureCapacity(emxArray__common *emxArray, int oldNumel, unsigned int
 }
 
 //
-// Arguments    : emxArray_boolean_T **pEmxArray
+// Arguments    : emxArray_int16_T **pEmxArray
 // Return Type  : void
 //
-void emxFree_boolean_T(emxArray_boolean_T **pEmxArray)
+void emxFree_int16_T(emxArray_int16_T **pEmxArray)
 {
-  if (*pEmxArray != (emxArray_boolean_T *)NULL) {
-    if (((*pEmxArray)->data != (boolean_T *)NULL) && (*pEmxArray)->canFreeData)
-    {
+  if (*pEmxArray != (emxArray_int16_T *)NULL) {
+    if (((*pEmxArray)->data != (short *)NULL) && (*pEmxArray)->canFreeData) {
       free((void *)(*pEmxArray)->data);
     }
 
     free((void *)(*pEmxArray)->size);
     free((void *)*pEmxArray);
-    *pEmxArray = (emxArray_boolean_T *)NULL;
+    *pEmxArray = (emxArray_int16_T *)NULL;
   }
 }
 
@@ -117,17 +116,17 @@ void emxFree_real_T(emxArray_real_T **pEmxArray)
 }
 
 //
-// Arguments    : emxArray_boolean_T **pEmxArray
+// Arguments    : emxArray_int16_T **pEmxArray
 //                int numDimensions
 // Return Type  : void
 //
-void emxInit_boolean_T(emxArray_boolean_T **pEmxArray, int numDimensions)
+void emxInit_int16_T(emxArray_int16_T **pEmxArray, int numDimensions)
 {
-  emxArray_boolean_T *emxArray;
+  emxArray_int16_T *emxArray;
   int i;
-  *pEmxArray = (emxArray_boolean_T *)malloc(sizeof(emxArray_boolean_T));
+  *pEmxArray = (emxArray_int16_T *)malloc(sizeof(emxArray_int16_T));
   emxArray = *pEmxArray;
-  emxArray->data = (boolean_T *)NULL;
+  emxArray->data = (short *)NULL;
   emxArray->numDimensions = numDimensions;
   emxArray->size = (int *)malloc((unsigned int)(sizeof(int) * numDimensions));
   emxArray->allocatedSize = 0;
@@ -185,27 +184,6 @@ void emxInit_int32_T1(emxArray_int32_T **pEmxArray, int numDimensions)
 // Return Type  : void
 //
 void emxInit_real_T(emxArray_real_T **pEmxArray, int numDimensions)
-{
-  emxArray_real_T *emxArray;
-  int i;
-  *pEmxArray = (emxArray_real_T *)malloc(sizeof(emxArray_real_T));
-  emxArray = *pEmxArray;
-  emxArray->data = (double *)NULL;
-  emxArray->numDimensions = numDimensions;
-  emxArray->size = (int *)malloc((unsigned int)(sizeof(int) * numDimensions));
-  emxArray->allocatedSize = 0;
-  emxArray->canFreeData = true;
-  for (i = 0; i < numDimensions; i++) {
-    emxArray->size[i] = 0;
-  }
-}
-
-//
-// Arguments    : emxArray_real_T **pEmxArray
-//                int numDimensions
-// Return Type  : void
-//
-void emxInit_real_T1(emxArray_real_T **pEmxArray, int numDimensions)
 {
   emxArray_real_T *emxArray;
   int i;
