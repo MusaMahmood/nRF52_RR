@@ -5,7 +5,7 @@
  * File: rt_nonfinite.h
  *
  * MATLAB Coder version            : 3.3
- * C/C++ source code generated on  : 14-Nov-2017 19:21:24
+ * C/C++ source code generated on  : 03-Oct-2018 23:07:16
  */
 
 #ifndef RT_NONFINITE_H

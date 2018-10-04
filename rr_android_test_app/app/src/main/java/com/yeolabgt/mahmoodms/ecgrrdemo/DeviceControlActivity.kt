@@ -441,8 +441,8 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
 
     override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
         if (mCh1 == null || mCh2 == null) {
-            mCh1 = DataChannel(false, mMSBFirst, 8 * mSampleRate)
-            mCh2 = DataChannel(false, mMSBFirst, 8 * mSampleRate)
+            mCh1 = DataChannel(false, mMSBFirst, 500)
+            mCh2 = DataChannel(false, mMSBFirst, 500)
         }
 
         if (AppConstant.CHAR_BATTERY_LEVEL == characteristic.uuid) {
@@ -458,6 +458,11 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
             if (mCh1!!.totalPacketsReceived % 5 == 0.toLong()) {
                 mPrimarySaveDataFile!!.writeToDisk(mCh1!!.dataBuffer)
                 addToGraphBuffer(mCh1!!, mGraphAdapterCh1)
+                // Run mCh1 Buffer Through RR detection.
+                Log.e(TAG, "mCh1Buffer: ${mCh1!!.classificationBuffer.size}")
+                val hr_rr = jgetHR(mCh1!!.classificationBuffer)  // Format: [peaks(len-2/2), locs(len-2/2), hr, rr]
+//                Log.e(TAG, "hr_rr: ${Arrays.toString(hr_rr)}")
+                Log.e(TAG, "hr_rr: ${hr_rr.size}")
             }
 //            Log.e(TAG, "Packets Received: ${mCh1?.totalPacketsReceived}")
         }
@@ -656,6 +661,8 @@ class DeviceControlActivity : Activity(), ActBle.ActBleListener {
     private external fun jdownSample(data: DoubleArray, sampleRate: Int): DoubleArray
 
     private external fun jecgBandStopFilter(data: DoubleArray): DoubleArray
+
+    private external fun jgetHR(data: DoubleArray): DoubleArray
 
     private external fun jmainInitialization(initialize: Boolean): Int
 

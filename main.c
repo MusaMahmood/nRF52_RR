@@ -929,7 +929,7 @@ int main(void) {
 #if defined(ADS1292)
   //SPI STUFF FOR ADS:
   // Stop continuous data conversion and initialize registers to default values
-  //  ads1291_2_powerdn();
+  ads1291_2_powerdn();
   ads1291_2_powerup();
   ads_spi_init_with_sample_freq(SPI_SCLK_WRITE_REG);
   nrf_delay_ms(5);

@@ -33,10 +33,14 @@ add_library( # Sets the name of the library.
                 src/main/cpp/ecg_filt_rescale.cpp
                 src/main/cpp/rearrange_5c.cpp
 
+                # ECG HR/RR:
+                src/main/cpp/get_hr_rr.cpp
+                src/main/cpp/get_hr_rr_emxAPI.cpp
+                src/main/cpp/get_hr_rr_emxutil.cpp
 
                 # Executor
                 src/main/cpp/jniExecutor.cpp
-
+                
                 src/main/cpp/rt_nonfinite.cpp
                 src/main/cpp/rtGetInf.cpp
                 src/main/cpp/rtGetNaN.cpp )
